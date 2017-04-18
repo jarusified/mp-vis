@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+ body {
+     font: 10px sans-serif;
+ }
+
+ .axis path,
+ .axis line {
+     fill: none;
+     stroke: #000;
+     shape-rendering: crispEdges;
+ }
+
+ .dot {
+     stroke: #000;
+ }
+
+</style>
+<script src="https:/d3js.org/d3.v4.min.js"></script>
+<script>
+
+ var width = window.innerWidth;
+ var height = window.innerHeight;
+
+ /*Utility functions */
+
+ function isInArray(val, arr){
+     return arr.indexOf(val) > -1;
+ }
+
+ 
+ d3.csv("data.csv", function(text){
+    return text;
+ }, function (error, data){
+     console.log(data);
+
+     var props = {
+	 callNames : []
+     };
+
+     for(var i=0; i<data.length; i++){
+	 if(!isInArray(data[i]["call"], props["callNames"])){
+	     props["callNames"].push(data[i]["call"]);
+	     props["callNames"]["time"] = data[i]["cpu_return"] - data[i]["cpu_enter"];
+	     console.log(data[i]["cpu_return"] - data[i]["cpu_enter"]);
+	 }
+	 else{
+	     props["callNames"]["time"]+= 
+	 }
+	 props["callNames"]["time"] = data[i]
+	 
+     }
+     console.log(props);
+
+ });
+ 
+</script>
+
+</body>
+</html>

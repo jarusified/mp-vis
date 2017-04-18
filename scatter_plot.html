@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+ body {
+     font: 10px sans-serif;
+ }
+
+ .axis path,
+ .axis line {
+     fill: none;
+     stroke: #fabb3c;
+     shape-rendering: crispEdges;
+ }
+
+ .dot {
+     stroke: #000;
+ }
+
+ svg{
+     font-size: 22px;
+     stroke-width : 4px;
+     background: #fff;
+ }
+
+</style>
+<body>
+    <svg width="960" height="720""> </svg>
+</body>
+
+<script src="https:/d3js.org/d3.v4.min.js"></script>
+<script>
+
+ 
+ d3.csv("data.csv", function(text){
+    return text;
+ }, function (error, data){
+     console.log(data);
+
+     var svg = d3.select("svg"),
+	 margin = {top: 50, right: 30, bottom: 30, left: 50},
+	 width = +svg.attr("width") - margin.left - margin.right,
+	 height = +svg.attr("height") - margin.top - margin.bottom,
+	 g = svg.append("g")
+		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+     var x = d3.scaleTime()
+	       .domain([1,1024])
+	       .range([0, width]);
+     var y = d3.scaleLinear()
+	       .domain([10,1])
+	       .range([0, height]);
+
+     var yAxis = d3.axisLeft(y);
+     var xAxis = d3.axisBottom(x);
+
+     var xAxisG = g.append("g")
+		   .attr("transform", "translate(0, " + height + ")")
+		   .attr("class","axis")
+		   .style("font-size","13px")
+		   .call(xAxis);
+     var yAxisG = g.append("g")
+		   .attr("class", "axis")
+		   .style("font-size", "20px")
+		   .call(yAxis);
+ });
+ 
+</script>
+</html>
