@@ -38,11 +38,28 @@
      console.log(data);
 
      var max_buffer_count = 0
+     var nodes = {
+	 "name":"",
+	 "x":0,
+	 "y":0
+     };
+     var count = 0;
+     var cycle=[];
+     var headless_functions = [ "MPI_Init", "MPI_Comm_rank", "MPI_Comm_size", "MPI_Comm_rank"]
      data.forEach(function(d){
-	 if(d["call"] == "MPI_Waitall"){
-	     console.log(d["request_array"]);
+	 if(headless_functions.indexOf(d["call"]) == -1){
+	     count+=1;
+	     if(d["call"] != "MPI_Waitall"){
+		 cycle.push({"id_req": d["request"], "comm_tim": d["cpu_return"] - d["cpu_enter"]});
+	     }
+	     else{
+		 console.log(JSON.parse(d["tag"]));
+//		 console.log(cycle);
+		 cycle=[];
+		 count=0;
+	     }
+	     //nodes.push({ "name" : d["call"], "x": buffer_size, "y": comm_percent })
 	 }
-//	 console.log(d["request"]);
      });
 
      var svg = d3.select("svg"),
