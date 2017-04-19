@@ -37,6 +37,14 @@
  }, function (error, data){
      console.log(data);
 
+     var max_buffer_count = 0
+     data.forEach(function(d){
+	 if(d["call"] == "MPI_Waitall"){
+	     console.log(d["request_array"]);
+	 }
+//	 console.log(d["request"]);
+     });
+
      var svg = d3.select("svg"),
 	 margin = {top: 50, right: 30, bottom: 30, left: 50},
 	 width = +svg.attr("width") - margin.left - margin.right,
@@ -44,8 +52,8 @@
 	 g = svg.append("g")
 		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-     var x = d3.scaleTime()
-	       .domain([1,1024])
+     var x = d3.scaleLinear()
+	       .domain([0,max_buffer_count])
 	       .range([0, width]);
      var y = d3.scaleLinear()
 	       .domain([10,1])
