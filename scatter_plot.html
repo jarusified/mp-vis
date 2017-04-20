@@ -64,8 +64,12 @@
      var count = 0;
      var cycle=[];
      var max_time = 0.00000001;
-     var max_buffer_count = 0
-
+     var max_buffer_count = 0;
+     var color_codes= {
+	 "MPI_Irecv" : "#bd3f3f",
+	 "MPI_Isend" : "#670808",
+	 "MPI_Waitall" : "#20ab1e"
+     };
      /* Data cleanup after every waitall call 
 	P: 
 	Q: Can clean up be done more elegant? */
@@ -102,6 +106,10 @@
      data.forEach(function(d){ 
 	 var cpu_time  = d["cpu_return"] - d["cpu_enter"];
 	 var wall_time = d["wall_return"] - d["wall_enter"];
+	 var curr_buffer_count = d["buffer_count"];
+	 if(max_buffer_count < curr_buffer_count){
+	     max_buffer_count = curr_buffer_count;
+	 }
 	 if(max_time < cpu_time){
 	     max_time = cpu_time;
 	 }
@@ -116,25 +124,25 @@
 		 for(var i=0; i< fcalls["id"].length; i++){
 		     fcalls["id"][i]["buffer_usage"] = fcalls["content"][i]["bytes"];
 		 }
-		 wcalls.push({ "nodes": fcalls, "globals": { "max_time" : max_time}});
+		 wcalls.push({ "nodes": fcalls, "globals": { "max_time" : max_time, "max_buffer_count": max_buffer_count}});
 		 cleanup();
 	     }
 	 }
      });
      console.log(wcalls);
-
+     
      var svg = d3.select("svg"),
-	 margin = {top: 50, right: 30, bottom: 30, left: 50},
+	 margin = {top: 50, right: 30, bottom: 30, left: 70},
 	 width = +svg.attr("width") - margin.left - margin.right,
 	 height = +svg.attr("height") - margin.top - margin.bottom,
 	 g = svg.append("g")
 		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     
      var x = d3.scaleLinear()
-	       .domain([0,max_buffer_count])
+	       .domain([0,100])
 	       .range([0, width]);
      var y = d3.scaleLinear()
-	       .domain([10,1])
+	       .domain([1000,1])
 	       .range([0, height]);
      var yAxis = d3.axisLeft(y);
      var xAxis = d3.axisBottom(x);
@@ -147,13 +155,15 @@
 		   .attr("class", "axis")
 		   .style("font-size", "20px")
 		   .call(yAxis);
-    
+
+     /* Todo - Loop through objects of objects in d3 [return of the value exits the loop]*/
      svg.selectAll("dot")
-	.data(data)
+	.data(wcalls)
 	.enter().append("circle")
-	.attr("r", 5)
-	.attr("cx", function(d) { return x(0); })
-	.attr("cy", function(d) { return y(0,2,3,4,5); });
+	.attr("r", 3)
+	.attr("cx", function(d) { for(var i=0; i< d["nodes"]["id"].length; i++) { return x(d["nodes"]["id"][i]["comm_time"]/d["globals"]["max_time"]*100); } })
+	.attr("cy", function(d) { for(var i=0; i< d["nodes"]["id"].length; i++) { return y((d["nodes"]["id"][i]["buffer_usage"]/d["globals"]["max_buffer_count"]))/1024*1024; } })
+        .style("fill", function(d) { for(var i =0; i<d["nodes"]["id"].length; i++){ console.log(d["nodes"]["id"][i]);  console.log(color_codes[d["nodes"]["id"][i]["call"]]); return color_codes[d["nodes"]["id"][i]["call"]]; } });
  });
  
 </script>
