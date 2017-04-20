@@ -30,38 +30,44 @@
 
 <script src="https:/d3js.org/d3.v4.min.js"></script>
 <script>
- /* Merge two objects to one 
-    Critique: src[key] = obj[key] is surely wrong. */
+
+ /* Note: Merge two objects to one 
+    Todo: src[key] = obj[key] is surely wrong. */
  function extend(obj, src){
      Object.keys(obj).forEach(function(key) { src[key] = obj[key]; });
      return obj1
  }
 
  /* Note: Bad coding!!! Need to change from eval to something else
-    Idea-1: Parse manually. */
+    Idea: Parse manually. */
  function parse_request_array(str){
      return eval( str.substr(1,str.length-2));
  }
+
+ /* Note: * headless_functions are the processes calls not involved in communication 
+          * fcalls -> Function call properties for  MPI_recv, MPI_send 
+          * wcalls -> MPI_Waitall block metadata. 
+          * max_time -> Max time among the set of processes 
+    Q: Does these functions have a purpose? 
+    Q: Any critical information to visualise? */
  
  d3.csv("data.csv", function(text){
     return text;
  }, function (error, data){
      console.log(data);
-
      var headless_functions = [ "MPI_Init", "MPI_Comm_rank", "MPI_Comm_size", "MPI_Comm_rank"]
-     /* Function calls such as MPI_recv, MPI_send */
      var fcalls = {
 	 "id": [],
 	 "content": {}
      };
-     /* MPI_Waitall calls metadata */
      var wcalls= [];
      var count = 0;
      var cycle=[];
-     var max_time = 0;
+     var max_time = 0.00000001;
      var max_buffer_count = 0
 
      /* Data cleanup after every waitall call 
+	P: 
 	Q: Can clean up be done more elegant? */
      function cleanup(){
 	 cycle=[];
@@ -70,19 +76,38 @@
 	     "id": [],
 	     "content": {}
 	 };	 
+	 max_time = 0.00000001;
      }
 
-     /* Data accumulation to a specific object. 
-	Note: Concatenate the data, content and id together 
+     /* Note: Data accumulation to a specific object 
+        Structure: 
+			    wcall: {
+				globals: {
+				    max_time: ..
+		                },
+				nodes: {
+				    content: {
+					bytes: .. ,
+					cancelled : ...
+				    },
+				    id: {
+					buffer_usage: ...
+				    }
+	                    }
+	Todo: Concatenate the data, content and id together 
 	    var a = extend(fcalls["content"], fcalls["id"]); 
-	Q: Is time difference between cpu_enter and cpu_return the communication time? 
-	Q: What is difference between wall time and cpu time, there is a difference of 2*10^-7 god knows whatever units.? */
+	Q: cpu_return - cpu_enter == communication time? 
+	Q: What is difference between wall time and cpu time, there is a difference of 2 * 10^-7 god knows whatever units(ms?)? 
+	Q: Is it right to consider by blocks (each block begins at MPI_Comm_size to MPI_Waitall) */
      data.forEach(function(d){ 
+	 var cpu_time  = d["cpu_return"] - d["cpu_enter"];
+	 var wall_time = d["wall_return"] - d["wall_enter"];
+	 if(max_time < cpu_time){
+	     max_time = cpu_time;
+	 }
 	 if(headless_functions.indexOf(d["call"]) == -1){
 	     count+=1;
 	     if(d["call"] != "MPI_Waitall"){
-		 var cpu_time = d["cpu_return"] - d["cpu_enter"];
-		 var wall_time = d["wall_return"] - d["wall_enter"];
 		 cycle.push({"rank": d["rank"], "datatype": d["datatype"], "call": d["call"], "id_req": d["request"], "comm_time": cpu_time});
 	     }
 	     else{
@@ -91,11 +116,10 @@
 		 for(var i=0; i< fcalls["id"].length; i++){
 		     fcalls["id"][i]["buffer_usage"] = fcalls["content"][i]["bytes"];
 		 }
-		 wcalls.push(fcalls);
+		 wcalls.push({ "nodes": fcalls, "globals": { "max_time" : max_time}});
 		 cleanup();
 	     }
 	 }
-	 
      });
      console.log(wcalls);
 
@@ -105,17 +129,15 @@
 	 height = +svg.attr("height") - margin.top - margin.bottom,
 	 g = svg.append("g")
 		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
+    
      var x = d3.scaleLinear()
 	       .domain([0,max_buffer_count])
 	       .range([0, width]);
      var y = d3.scaleLinear()
 	       .domain([10,1])
 	       .range([0, height]);
-
      var yAxis = d3.axisLeft(y);
      var xAxis = d3.axisBottom(x);
-
      var xAxisG = g.append("g")
 		   .attr("transform", "translate(0, " + height + ")")
 		   .attr("class","axis")
@@ -125,6 +147,13 @@
 		   .attr("class", "axis")
 		   .style("font-size", "20px")
 		   .call(yAxis);
+    
+     svg.selectAll("dot")
+	.data(data)
+	.enter().append("circle")
+	.attr("r", 5)
+	.attr("cx", function(d) { return x(0); })
+	.attr("cy", function(d) { return y(0,2,3,4,5); });
  });
  
 </script>
