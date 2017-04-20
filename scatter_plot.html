@@ -30,51 +30,74 @@
 
 <script src="https:/d3js.org/d3.v4.min.js"></script>
 <script>
+ /* Merge two objects to one 
+    Critique: src[key] = obj[key] is surely wrong. */
+ function extend(obj, src){
+     Object.keys(obj).forEach(function(key) { src[key] = obj[key]; });
+     return obj1
+ }
 
+ /* Note: Bad coding!!! Need to change from eval to something else
+    Idea-1: Parse manually. */
+ function parse_request_array(str){
+     return eval( str.substr(1,str.length-2));
+ }
  
  d3.csv("data.csv", function(text){
     return text;
  }, function (error, data){
      console.log(data);
 
-     var max_buffer_count = 0
-     var waitall = {
+     var headless_functions = [ "MPI_Init", "MPI_Comm_rank", "MPI_Comm_size", "MPI_Comm_rank"]
+     /* Function calls such as MPI_recv, MPI_send */
+     var fcalls = {
 	 "id": [],
 	 "content": {}
      };
+     /* MPI_Waitall calls metadata */
+     var wcalls= [];
      var count = 0;
      var cycle=[];
-     var headless_functions = [ "MPI_Init", "MPI_Comm_rank", "MPI_Comm_size", "MPI_Comm_rank"]
-     
+     var max_time = 0;
+     var max_buffer_count = 0
+
+     /* Data cleanup after every waitall call 
+	Q: Can clean up be done more elegant? */
      function cleanup(){
 	 cycle=[];
 	 count=0;
-	 waitall={
+	 fcalls={
 	     "id": [],
 	     "content": {}
 	 };	 
      }
 
-     function parse_request_array(str){
-	 // Quick Hack: Bad coding!!! Need to change from eval to something else
-	 // Parse manually.
-	 return eval( str.substr(1,str.length-2));
-     }
-
-     data.forEach(function(d){
+     /* Data accumulation to a specific object. 
+	Note: Concatenate the data, content and id together 
+	    var a = extend(fcalls["content"], fcalls["id"]); 
+	Q: Is time difference between cpu_enter and cpu_return the communication time? 
+	Q: What is difference between wall time and cpu time, there is a difference of 2*10^-7 god knows whatever units.? */
+     data.forEach(function(d){ 
 	 if(headless_functions.indexOf(d["call"]) == -1){
 	     count+=1;
 	     if(d["call"] != "MPI_Waitall"){
-		 cycle.push({"call": d["call"], "id_req": d["request"], "comm_tim": d["cpu_return"] - d["cpu_enter"]});
+		 var cpu_time = d["cpu_return"] - d["cpu_enter"];
+		 var wall_time = d["wall_return"] - d["wall_enter"];
+		 cycle.push({"rank": d["rank"], "datatype": d["datatype"], "call": d["call"], "id_req": d["request"], "comm_time": cpu_time});
 	     }
 	     else{
-		 waitall["content"] = parse_request_array(d["request_array"]);
-		 waitall["id"] = cycle;
-		 console.log(waitall);
+		 fcalls["content"] = parse_request_array(d["request_array"]);
+		 fcalls["id"] = cycle;
+		 for(var i=0; i< fcalls["id"].length; i++){
+		     fcalls["id"][i]["buffer_usage"] = fcalls["content"][i]["bytes"];
+		 }
+		 wcalls.push(fcalls);
 		 cleanup();
 	     }
 	 }
+	 
      });
+     console.log(wcalls);
 
      var svg = d3.select("svg"),
 	 margin = {top: 50, right: 30, bottom: 30, left: 50},
