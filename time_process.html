@@ -29,7 +29,7 @@
 }
 </style>
 <body>
-    <svg width="960" height="720""> </svg>
+    <svg width="1500" height="1500""> </svg>
 </body>
 <script src= "./jquery.min.js"></script>
 <script src= "./d3.v4.min.js"></script>
@@ -37,11 +37,11 @@
 var width = window.innerWidth;
 var height = window.innerHeight;
 var colorCodes = {
-     '"MPI_Init"': "0x0a0b0c",
-     '"MPI_Irecv"': "0x0d0e0f",
-     '"MPI_Isend"': "0x1a1b1c",
-     '"MPI_Comm_rank"': "0x1d1e1f",
-     '"MPI_Comm_size"': "0x2a2b2c",
+     '"MPI_Init"': "#dc3458",
+     '"MPI_Irecv"': "#1768af",
+     '"MPI_Isend"': "#34dc44",
+     '"MPI_Comm_rank"': "#af6c12",
+     '"MPI_Comm_size"': "0xfafaff",
 };
 var datatypes = {
      '"MPI_DOUBLE"': 8,
@@ -69,18 +69,17 @@ function parseData(){
      var data = getFile("data.csv").done(function(res){
 	 var blocks = res.split("\n");
 	 var maxTime = 0; 
-	 for(var i = 0; i<blocks.length; i++){
-	     var block = blocks[i].split(",");
+	 console.log(blocks[1]);
+	 var count = 0;
+	 setInterval(function(){
+	     var block = blocks[count++].split(",");
 	     var time = block[block.length-1] - block[3];
 	     var memory = datatypes[block[6]] * parseInt(block[5]);
-	     if(maxTime < time){
-		 maxTime = time;
-	     }
+	     var color = colorCodes[block[1]];
 	     if(!isNaN(time) && !isNaN(memory)){
-		 animate([time, memory]);	     
+		 animate([time, memory, color]);	     
 	     }
-	 }
-	 console.log("max", maxTime);
+	 },100);
      });
      
 }
@@ -121,20 +120,19 @@ parseData();
 
 function animate(coords){
      var max_time =  0.00005214900000000133;
-//     console.log(coords[0], coords[1]);
-     console.log((coords[0]/max_time)*10000);
      var circle = g.append("circle")
-		   .attr("r", 3)
+		   .attr("r", 5)
 		   .attr("stroke-opacity", 1)
 		   .attr("cy", (coords[0]/max_time)*10000)
-		   .attr("cx", coords[1]);
- /*    circle.transition()
-	   .duration(1000)
+		   .attr("cx", coords[1])
+		   .style("fill", coords[2]);
+     circle.transition()
+	   .duration(100000)
 	   .ease(d3.easeCubicOut)
 	   .attr("cy", 650)
 	   .style("opacity", 0)
 	   .transition()
-	   .remove();*/
+	   .remove();
 }
  
  /*    function createCircle(current, crimes_parameters){
