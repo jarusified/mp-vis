@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+
+<style>
+ #box{
+     position : absolute;
+     top : 0px;
+     left: 0px;
+ }
+ .bar {
+     fill : red;
+ }
+ .bar:hover{
+     fill : blue;
+ }
+ svg{
+     font-size: 22px;
+     stroke-width : 2px;
+     background: #fff;
+ }
+#heading{
+    font-size: 32px;
+    color: #771818
+}
+#month{
+    font-size: 28px;
+    color: #bd5858;
+    position: absolute;
+    left : 800px;
+}
+</style>
+<body>
+    <svg width="960" height="720""> </svg>
+</body>
+<script src= "./jquery.min.js"></script>
+<script src= "./d3.v4.min.js"></script>
+<script>
+var width = window.innerWidth;
+var height = window.innerHeight;
+var colorCodes = {
+     '"MPI_Init"': "0x0a0b0c",
+     '"MPI_Irecv"': "0x0d0e0f",
+     '"MPI_Isend"': "0x1a1b1c",
+     '"MPI_Comm_rank"': "0x1d1e1f",
+     '"MPI_Comm_size"': "0x2a2b2c",
+};
+var datatypes = {
+     '"MPI_DOUBLE"': 8,
+     "": 1
+};
+function getFile(file){
+     var deferred = new $.Deferred();
+     var res;
+     var f = new XMLHttpRequest();
+     f.open("GET", file, true);
+     f.onreadystatechange = function(){
+	 if(f.readyState == 4){
+	     if(f.status == 200 || f.status == 0){
+		 var res = f.responseText;
+		 deferred.resolve(res);
+	     }
+	 }
+     }
+     f.send()
+     return deferred.promise();
+}
+
+function parseData(){
+     var coords = [];
+     var data = getFile("data.csv").done(function(res){
+	 var blocks = res.split("\n");
+	 var maxTime = 0; 
+	 for(var i = 0; i<blocks.length; i++){
+	     var block = blocks[i].split(",");
+	     var time = block[block.length-1] - block[3];
+	     var memory = datatypes[block[6]] * parseInt(block[5]);
+	     if(maxTime < time){
+		 maxTime = time;
+	     }
+	     if(!isNaN(time) && !isNaN(memory)){
+		 animate([time, memory]);	     
+	     }
+	 }
+	 console.log("max", maxTime);
+     });
+     
+}
+
+parseData();
+
+ var svg = d3.select("svg"),
+     margin = {top: 50, right: 30, bottom: 30, left: 50},
+     width = +svg.attr("width") - margin.left - margin.right,
+     height = +svg.attr("height") - margin.top - margin.bottom,
+     g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+ var x = d3.scaleLinear()
+	   .range([0, width]);
+ var y = d3.scaleLinear()
+	   .domain([1, 10])
+	   .range([0, height]);
+ var yAxis = d3.axisLeft(y);
+ var xAxis = d3.axisBottom(x);
+ var xAxisG = g.append("g")
+	       .attr("transform", "translate(0, " + height + ")")
+	       .style("font-size","13px");;
+ var yAxisG = g.append("g")
+	       .attr("transform", "translate(0, " - height + ")")
+	       .attr("class", "axis")
+	       .style("font-size", "20px")
+	       .call(yAxis);
+ var count = 0;
+ var node_count = 0;
+ var seconds = 86400000;
+ var days = 0;
+ 
+// x.domain([now, prev]);
+ xAxisG.call(xAxis);
+ d3.interval(function() {	
+ },100);
+
+
+
+function animate(coords){
+     var max_time =  0.00005214900000000133;
+//     console.log(coords[0], coords[1]);
+     console.log((coords[0]/max_time)*10000);
+     var circle = g.append("circle")
+		   .attr("r", 3)
+		   .attr("stroke-opacity", 1)
+		   .attr("cy", (coords[0]/max_time)*10000)
+		   .attr("cx", coords[1]);
+ /*    circle.transition()
+	   .duration(1000)
+	   .ease(d3.easeCubicOut)
+	   .attr("cy", 650)
+	   .style("opacity", 0)
+	   .transition()
+	   .remove();*/
+}
+ 
+ /*    function createCircle(current, crimes_parameters){
+     var circle = g.append("circle")
+		   .attr("r", 70)
+		   .attr("stroke-opacity", 1)
+		   .style("fill", crimes_parameters["circle_color"])
+		   .style("opacity", 1 - parseInt(crimes_parameters["crimes_level_score"])/10)
+		   .style("stroke", "black")
+		   .attr("cy", parseInt(crimes_parameters["crimes_level_score"])*height/10);
+     circle.transition("time")
+           .duration(5000)
+           .ease(d3.easeLinear)
+           .attrTween("cx", function(d){ return function(t) { return x(current); }});;
+     
+     circle.transition()
+           .duration(750)
+           .ease(d3.easeCubicOut)
+           .attr("r", crimes_parameters["crimes_count"]/10)
+           .attr("stroke-opacity", 1)
+	   .transition()
+           .delay(5000)
+           .ease(d3.easeCubicIn)
+           .attr("stroke-opacity", 0)
+           .remove();
+ }
+ */
+
+ 
+</script>
+</html>
