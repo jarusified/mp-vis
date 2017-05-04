@@ -78,7 +78,7 @@ function parseData(){
 	     var time = block[block.length-1] - block[3];
 	     var memory = datatypes[block[6]] * parseInt(block[5]);
 	     var color = colorCodes[block[1]];
-	     if(!isNaN(time) && !isNaN(memory)){
+	     if(!isNaN(time) && !isNaN(memory) && !pause){
 		 animate([time, memory, color]);	     
 	     }
 	 },100);
@@ -114,7 +114,7 @@ parseData();
  var node_count = 0;
  var seconds = 86400000;
  var days = 0;
- 
+ var pause = false;
  xAxisG.call(xAxis);
 
  function animate(coords){
@@ -122,8 +122,8 @@ parseData();
      var circle = g.append("circle")
 		   .attr("r", 9)
 		   .attr("stroke-opacity", 1)
-		   .attr("cy", (coords[0]/max_time)*10000)
-		   .attr("cx", coords[1])
+		   .attr("cy", (coords[0]/max_time)*5000)
+		   .attr("cx", coords[1]*20)
 		   .style("fill", coords[2]);
      circle.transition()
 	   .duration(coords[0]*10000000000)
@@ -149,6 +149,15 @@ parseData();
 		      .attr("dx", 1020)
 	              .style("font-size", "30px")
 		      .text(function() { return key; });
+     }
+ }
+ 
+ document.onkeydown = function(e){
+     switch(e.keyCode){
+	     case 32:{
+		 pause = !pause;
+		 break;
+	     }
      }
  }
 </script>
