@@ -94,8 +94,8 @@ parseData();
      var memory = datatypes[block[6]] * parseInt(block[5]);
      var color = colorCodes[block[1]];
      var call = block[1];
-     console.log( fdebug);
      if(!isNaN(time) && !isNaN(memory) && (!pause || debug) ){
+	 console.log("getting in");
 	 animate([time, memory, color]);	     
      }   
  }
@@ -107,7 +107,7 @@ parseData();
      g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
  var x = d3.scaleLinear()
-	   .range([0, width]);
+	   .range([0, 128000]);
  var y = d3.scaleLinear()
 	   .domain([1, 10])
 	   .range([0, height]);
@@ -129,21 +129,24 @@ parseData();
  xAxisG.call(xAxis);
 
  function animate(coords){
+     console.log("animate");
      var max_time =  0.00005214900000000133;
      var circle = g.append("circle")
 		   .attr("r", 9)
 		   .attr("stroke-opacity", 1)
 		   .attr("cy", (coords[0]/max_time)*5000)
-		   .attr("cx", coords[1]*20)
+		   .attr("cx", coords[1]/10)
 		   .style("fill", coords[2]);
      circle.transition()
 	   .duration(coords[0]*10000000000)
 	   .ease(d3.easeCubicOut)
 	   .attr("cy", 1470)
-	   .style("opacity", 0)
+	   .style("opacity", 0) 
 	   .transition()
 	   .remove();
- }
+     console.log((coords[0]/max_time)*5000);
+     console.log(coords[1]*10);
+}
  
  var count = 0;
  for(var key in colorCodes){
