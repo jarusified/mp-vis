@@ -45,10 +45,14 @@ var colorCodes = {
      '"MPI_Waitall"': "#841f14"
 };
 
+var blocks;
 var datatypes = {
      '"MPI_DOUBLE"': 8,
      "": 1
 };
+var debug =false;
+var pause = false;
+var parse_count = 0;
 
 function getFile(file){
      var deferred = new $.Deferred();
@@ -70,24 +74,32 @@ function getFile(file){
 function parseData(){
      var coords = [];
      var data = getFile("data.csv").done(function(res){
-	 var blocks = res.split("\n");
-	 var maxTime = 0; 
-	 var count = 0;
+	 var count=0;
+	 blocks  = res.split("\n");
 	 setInterval(function(){
-	     var block = blocks[count++].split(",");
-	     var time = block[block.length-1] - block[3];
-	     var memory = datatypes[block[6]] * parseInt(block[5]);
-	     var color = colorCodes[block[1]];
-	     if(!isNaN(time) && !isNaN(memory) && !pause){
-		 animate([time, memory, color]);	     
-	     }
+	     if(!pause)
+		 readLine(blocks, count++);
 	 },100);
+
      });
-     
 }
 
 parseData();
 
+ function readLine(blocks, count){
+     console.log(blocks[count]);
+     console.log(count);
+     var block = blocks[count].split(",");
+     var time = block[block.length-1] - block[3];
+     var memory = datatypes[block[6]] * parseInt(block[5]);
+     var color = colorCodes[block[1]];
+     var call = block[1];
+     console.log( fdebug);
+     if(!isNaN(time) && !isNaN(memory) && (!pause || debug) ){
+	 animate([time, memory, color]);	     
+     }   
+ }
+ 
  var svg = d3.select("svg"),
      margin = {top: 50, right: 30, bottom: 30, left: 50},
      width = +svg.attr("width") - margin.left - margin.right,
@@ -114,7 +126,6 @@ parseData();
  var node_count = 0;
  var seconds = 86400000;
  var days = 0;
- var pause = false;
  xAxisG.call(xAxis);
 
  function animate(coords){
@@ -155,7 +166,14 @@ parseData();
  document.onkeydown = function(e){
      switch(e.keyCode){
 	     case 32:{
+		 console.log("paused");
 		 pause = !pause;
+		 debug = false;
+		 break;
+	     }
+	     case 70:{
+		 debug = true;
+		 readLine(blocks, count++);
 		 break;
 	     }
      }
